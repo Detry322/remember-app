@@ -52,5 +52,11 @@ def createVideo():
 		print request.data
 
 
+def run_beat_detection():
+	pass
+
+
+
+
 if (__name__ == '__main__'):
 	app.run(debug=True, threaded=True)
