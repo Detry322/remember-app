@@ -1,4 +1,4 @@
-import os
+import os, urllib
 from flask import Flask, request, redirect, url_for, send_from_directory
 from werkzeug.utils import secure_filename
 
@@ -18,6 +18,7 @@ def upload():
 		if 'file' not in request.files:
 			flash('No file part')
 			return redirect(request.url)
+		print 'REQUEST', request
 		video = request.files['file']
 		if video.filename == '':
 			flash('No selected file')
@@ -45,17 +46,31 @@ def allowed_file(filename):
 	return '.' in filename and \
 		filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
 
-
+'''
+Params:
+- song: string of spotify url
+- video_snips: dictionary {'video_name': [(start, end)...]}
+'''
 @app.route('/create', methods=['POST'])
 def createVideo():
 	if request.method == 'POST':
-		print request.data
+		json_data = request.get_json()
+
+		# Download spotify url
+		spotify_url = json_data['song']
+		song_id = spotify_url.split('/')[-1]
+		song_path = 'songs/' + song_id + '.mp3'
+
+		song, _headers = urllib.urlretrieve(spotify_url, song_path)
+
+		# Run beat detection.
+		run_beat_detection(song_path)
+
+		return 'song ' + song
 
 
-def run_beat_detection():
+def run_beat_detection(song_path):
 	pass
-
-
 
 
 if (__name__ == '__main__'):
