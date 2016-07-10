@@ -78,7 +78,7 @@ def beat_detection(audioFile):
     count = 0
     
     for i in range(len(differed)):
-        if differed[i] >= maxDiff/2 and count < 50:
+        if differed[i] >= maxDiff/2 and count < 100:
             time = float(i)/(sample_rate/180.)
             timeArray.append(time)
             count = count+1

@@ -63,8 +63,6 @@ def create_video():
 
 		final_video_path = stitch_video_clips(video_clips_times, peaks, song)
 
-		print 'final', final_video_path
-
 		return url_for('created_video', filename=final_video_path), 200
 
 @app.route('/created/<filename>')
@@ -91,14 +89,14 @@ def run_beat_detection(song_path):
 
 	sorted_peaks = [x[0] for x in sorted(peaks_with_distance, key=lambda tup: tup[1], reverse=True)]
 
-	return sorted_peaks
+	return peaks
 
 
 def stitch_video_clips(video_clips_times, peaks, song_path):
 
 	audio = AudioFileClip(song_path)
 
-	sorted_peaks = sorted(peaks)
+	sorted_peaks = sorted([0.00] + peaks)
 
 	# Get lengths of video clips and audio clips
 	video_clips_times_and_lengths, audio_clip_lengths = format_videos_and_audio(video_clips_times, sorted_peaks)
@@ -110,7 +108,9 @@ def stitch_video_clips(video_clips_times, peaks, song_path):
 	print 'peaks', sorted_peaks
 	prefix = '/uploads'
 
-	while(len(used_video_clips) < len(video_clips_times_and_lengths)):
+	flag = True
+
+	while(len(used_video_clips) < len(video_clips_times_and_lengths) and flag):
 		# Pick random video that we haven't used.
 		i = random.randint(0, len(video_clips_times_and_lengths) - 1)
 
@@ -122,29 +122,37 @@ def stitch_video_clips(video_clips_times, peaks, song_path):
 
 			# Check for peak that is at end or right before
 			for p in range(j, len(sorted_peaks)):
-				print 'p', sorted_peaks[p]
+				if sorted_peaks[j] + video_clip['length'] > 30.00:
+					flag = False
+					new_length = 30.00 - sorted_peaks[j]
+					print 'new_length', new_length
+					break
 				if sorted_peaks[p] > sorted_peaks[j] + video_clip['length']:
+					new_length = sorted_peaks[p - 1] - sorted_peaks[j]
 					j = p - 1
 					break
 				elif sorted_peaks[p] == sorted_peaks[j] + video_clip['length']:
+					new_length = sorted_peaks[p] - sorted_peaks[j]
 					j = p
 					break
 
-			print 'ending', sorted_peaks[j]
 			# Truncate and create the video clip and add it to the order.
-			if video_clip['video_name'][:len(prefix)] == prefix:
-				video_clip['video_name'] = video_clip['video_name'][len(prefix):]
-			filename = app.config['UPLOAD_FOLDER'] + '/' + video_clip['video_name']	
-			v = VideoFileClip(filename, audio=True).subclip(video_clip['start'], sorted_peaks[j])
-			video_order.append(v)
+			if (flag):
+				if video_clip['video_name'][:len(prefix)] == prefix:
+					video_clip['video_name'] = video_clip['video_name'][len(prefix):]
+				filename = app.config['UPLOAD_FOLDER'] + '/' + video_clip['video_name']	
 
-	final_video = concatenate_videoclips(video_order)
+				v = VideoFileClip(filename, audio=True).subclip(video_clip['start'], video_clip['start'] + new_length)
+				print 'add to video', video_clip['video_name']
+				video_order.append(v)
+
+	final_video = concatenate_videoclips(video_order, method="compose")
 
 	filename = str(random.randint(0, 1000000000000)) + '.mp4'
 
 	final_video_path = 'final_videos/' + filename
 
-	final_video.write_videofile(final_video_path, audio=song_path)
+	final_video.write_videofile(final_video_path, audio=song_path, codec='libx264', fps=30, audio_fps=44100, preset='superfast')
 
 	return filename
 
