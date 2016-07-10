@@ -70,7 +70,6 @@ function parseSearchAlbumsTracks(tracks) {
 
 function selectSongHandler(song_elem, li) {
     return function() {
-        console.log("wtf");
         $('#chosenSong').empty();
         console.log(song_elem);
         $(song_elem).appendTo('#chosenSong');

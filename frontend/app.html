@@ -21,6 +21,9 @@
     <link href="http://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic" rel="stylesheet" type="text/css">
     <link href="http://fonts.googleapis.com/css?family=Montserrat:400,700" rel="stylesheet" type="text/css">
 
+    <link href="bower_components/video.js/dist/video-js.min.css" rel="stylesheet" type="text/css">
+    <link href="bower_components/dropzone/dist/dropzone.css" rel="stylesheet" type="text/css">
+
     <!-- Custom CSS -->
     <style>
     body {
@@ -35,6 +38,8 @@
     <!-- Bootstrap Core JavaScript -->
     <script src="vendor/bootstrap/js/bootstrap.min.js"></script>
     <script src="bower_components/handlebars/handlebars.min.js"></script>
+    <script src="bower_components/video.js/dist/video.min.js"></script>
+    <script src="bower_components/dropzone/dist/dropzone.js"></script>
 
     <script id="song-preview-template" type="text/x-handlebars-template">
       <div class="song-preview paused" data-song-url='{{preview_url}}'>
@@ -45,9 +50,18 @@
       </div>
     </script>
 
+    <script id="video-preview-template" type="text/x-handlebars-template">
+      <div class="video-preview">
+        <div class="isselect"></div>
+        <div class="video-title">{{name}}</div>
+        <div>{{{size}}}, Upload progress: <span class="uploaded-percent">0%</span></div>
+      </div>
+    </script>
+
 
     <script src="js/app.js" type="text/javascript"></script>
     <script src="js/song_stuff.js" type="text/javascript"></script>
+    <script src="js/video_stuff.js" type="text/javascript"></script>
 
     <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
@@ -142,7 +156,7 @@
                             <ul class="list-inline pull-right">
                                 <li><button type="button" id="step1btn" class="btn btn-primary next-step" disabled>Save and continue</button></li>
                             </ul>
-                            <p>You chose: <span id="chosenSong">nothing yet!</span></p>
+                            <p>You chose: <span id="chosenSong">no one yet!</span></p>
                             <br />
                             <h4>Search for a song</h4>
                             <p>Type a song name to search. Then, click on any song from the results to play 30 seconds.</p>
@@ -155,12 +169,35 @@
                             </div>
                         </div>
                         <div class="tab-pane" role="tabpanel" id="step2">
-                            <h3>Step 2</h3>
-                            <p>This is step 2</p>
+                            <h3>Upload and select video clips!</h3>
+                            <p>This is the video stage. Your uploaded videos will appear here for you to play and select from. Instructions at the bottom!</p>
+                            <div id="videoContainer">
+                                <video>
+                                Your browser does not support the video tag.
+                                </video>
+                            </div>
+                            <canvas id="videoScrubber"></canvas>
+                            <p>Total length: <span id="lengthCheck">0 seconds</span></p>
+                            <ul id="uploadedVideos">
+                            </ul>
+                            <div id="videoDropzone">
+                                <i class="glyphicon glyphicon-plus"></i>
+                            </div>
                             <ul class="list-inline pull-right">
                                 <li><button type="button" class="btn btn-default prev-step">Previous</button></li>
-                                <li><button type="button" class="btn btn-primary next-step">Save and continue</button></li>
+                                <li><button id="step2btn" type="button" class="btn btn-primary next-step" disabled>Save and continue</button></li>
                             </ul>
+                            <ul>
+                                <h4>Instructions</h4>
+                                <li>Drag videos over the + to add them (or click)</li>
+                                <li>Press spacebar to Play/Pause.</li>
+                                <li>Hovering over the bottom can be used to scrub through the video.</li>
+                                <li>Click and drag on the scrub area to add a clip.</li>
+                                <li>Clips must be longer than 5 seconds in length</li>
+                                <li>Click on a highlighted area to delete.</li>
+                                <li>You must select more than 30 seconds in clips to continue</li>
+                            </ul>
+                            <br />
                         </div>
                         <div class="tab-pane" role="tabpanel" id="step3">
                             <h3>Step 3</h3>
