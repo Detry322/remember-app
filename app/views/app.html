@@ -171,7 +171,7 @@
                         <div class="tab-pane" role="tabpanel" id="step2">
                             <h3>Upload and select video clips!</h3>
                             <p>This is the video stage. Your uploaded videos will appear here for you to play and select from. Instructions at the bottom!</p>
-                            <div id="videoContainer">
+                            <div id="videoContainer" class="videoBackdrop">
                                 <video>
                                 Your browser does not support the video tag.
                                 </video>
@@ -209,7 +209,14 @@
                         </div>
                         <div class="tab-pane" role="tabpanel" id="complete">
                             <h3>Complete</h3>
-                            <p>You have successfully completed all steps.</p>
+                            <p>You can view your video below.</p>
+                            <div id="finalVideo" class="videoBackdrop">
+                                <video controls>
+                                Your browser does not support the video tag.
+                                </video>
+                            </div>
+                            <br/>
+                            <p>Enjoy your video!</p>
                         </div>
                         <div class="clearfix"></div>
                     </div>

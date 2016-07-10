@@ -1,6 +1,6 @@
 $(document).ready(function(){
 
-  var video_elem = document.querySelector('video');
+  var video_elem = document.querySelector('#videoContainer video');
   var video = video_func(video_elem);
 
   var canvas_elem = document.getElementById('videoScrubber');

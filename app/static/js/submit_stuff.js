@@ -36,11 +36,13 @@ $(document).ready(function() {
       data: JSON.stringify(data),
       contentType :'application/json',
       success: function(result) {
-        console.log(result);
-        console.log("Done!");
+        $('#finalVideo video').get(0).src = result;
+        var $active = $('.wizard .nav-tabs li.active');
+        $active.next().removeClass('disabled');
+        nextTab($active);
       },
       error: function() {
-        //window.location = window.location;
+        alert("Sad error :(");
       }
     });
   });

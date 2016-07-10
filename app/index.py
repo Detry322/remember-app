@@ -11,6 +11,7 @@ ALLOWED_EXTENSIONS = set(['mp4', 'mov'])
 
 app = Flask(__name__, static_url_path='/static')
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['CREATED_FOLDER'] = CREATED_FOLDER
 
 @app.route('/')
 def hello_world():
@@ -114,17 +115,20 @@ def stitch_video_clips(video_clips_times, peaks, song_path):
 
 	final_video = concatenate_videoclips(video_clips_order)
 
-	final_video_path = 'final_videos/' + str(random.randint(0, 1000)) + '.mp4'
+	filename = str(random.randint(0, 1000000000000)) + '.mp4'
+
+	final_video_path = 'final_videos/' + filename
 
 	final_video.write_videofile(final_video_path, audio=song_path)
 
 
-	return final_video_path
+	return filename
 
 def create_video_clips(video_clips_times):
 	clips = []
 	for v in video_clips_times:
-		video = VideoFileClip(v['video_name'], audio=True)
+		filename = app.config['UPLOAD_FOLDER'] + '/' + v['video_name'].lstrip('/uploads')
+		video = VideoFileClip(filename, audio=True)
 		clips.append({
 			'id': v['id'],
 			'video': video.subclip(v['start'], v['end'])

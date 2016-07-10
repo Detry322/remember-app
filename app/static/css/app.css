@@ -178,7 +178,7 @@ span.round-tab:hover {
     margin-top: 0;
 }
 
-#videoContainer {
+.videoBackdrop {
     background-color: #333333;
     width: 100%;
     text-align: center;
@@ -205,7 +205,7 @@ span.round-tab:hover {
     cursor: pointer;
 }
 
-#step2 video {
+.videoBackdrop video {
     width: 800px;
     height: 450px;
     background-color: white;
