@@ -33,7 +33,7 @@ $(document).ready(function(){
       end: end_percent * video_elem.duration
     };
     var duration = Math.abs(end_percent - start_percent) * video_elem.duration;
-    if (!video.rangeOverlapsRanges(range) && duration > 5) {
+    if (!video.rangeOverlapsRanges(range) && duration > 3 && duration < 7) {
       video.addRange(start_percent, end_percent);
     }
     canvas.dragging = false;
@@ -185,7 +185,7 @@ function checkVideoCompletion(video) {
     }
   });
 
-  if (!completed || video.totalRangeTime() <= 30) {
+  if (!completed || video.totalRangeTime() <= 45) {
     $('#step2btn').attr('disabled', true);
   } else {
     $('#step2btn').attr('disabled', false);
