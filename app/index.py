@@ -108,6 +108,7 @@ def stitch_video_clips(video_clips_times, peaks, song_path):
 	j = 0
 
 	print 'peaks', sorted_peaks
+	prefix = '/uploads'
 
 	while(len(used_video_clips) < len(video_clips_times_and_lengths)):
 		# Pick random video that we haven't used.
@@ -131,7 +132,9 @@ def stitch_video_clips(video_clips_times, peaks, song_path):
 
 			print 'ending', sorted_peaks[j]
 			# Truncate and create the video clip and add it to the order.
-			filename = app.config['UPLOAD_FOLDER'] + '/' + video_clip['video_name'].lstrip('/uploads')
+			if video_clip['video_name'][:len(prefix)] == prefix:
+				video_clip['video_name'] = video_clip['video_name'][len(prefix):]
+			filename = app.config['UPLOAD_FOLDER'] + '/' + video_clip['video_name']	
 			v = VideoFileClip(filename, audio=True).subclip(video_clip['start'], sorted_peaks[j])
 			video_order.append(v)
 
