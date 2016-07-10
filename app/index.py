@@ -57,7 +57,7 @@ def create_video():
 
 		song, _headers = urllib.urlretrieve(spotify_url, song_path)
 
-		peaks = run_beat_detection(song_path) # dictionary: {'time': score}
+		peaks = run_beat_detection(song_path)
 		video_clips_times = json_data['video_clips']
 
 		final_video_path = stitch_video_clips(video_clips_times, peaks, song)
@@ -72,7 +72,7 @@ def created_video(filename):
 def run_beat_detection(song_path):
 	peaks = beat_detection(song_path)
 
-	sorted_peaks = sorted(peaks.items(), key=operator.itemgetter(1))
+	sorted_peaks = sorted(peaks)
 	print 'sorted_peaks', sorted_peaks[:5]
 
 	return {'5.05': 6, '10.35': 6, '13.21': 7, '15.23': 10, '22.31': 8}
@@ -89,7 +89,8 @@ def stitch_video_clips(video_clips_times, peaks, song_path):
 	sorted_videos = sorted(video_clips_times_and_lengths, key=lambda k: k['length'], reverse=True)
 	sorted_audio = sorted(audio_clip_lengths, key=lambda k: k['length'], reverse=True)
 
-	# For each audio clip find the video clip that fits it
+	# Try to fit the largest video clip in the audio clip possible.
+	# We look from biggest audio sections to smallest.
 	mapping = {}
 	used_videos = []
 
@@ -104,7 +105,6 @@ def stitch_video_clips(video_clips_times, peaks, song_path):
 	# Clip out the videos for each video id
 	clips = create_video_clips(sorted_videos)
 
-	# For each audio id from 0 to end
 	video_clips_order = []
 	for a in xrange(len(sorted_audio)):
 		video_id = mapping[a]
@@ -113,10 +113,6 @@ def stitch_video_clips(video_clips_times, peaks, song_path):
 				video_clips_order.append(c['video'])
 
 	final_video = concatenate_videoclips(video_clips_order)
-
-	# Find associated video for it
-	# concatenate in that order
-	# replace the audio on top of it with the original audio
 
 	final_video_path = 'final_videos/' + str(random.randint(0, 1000)) + '.mp4'
 
