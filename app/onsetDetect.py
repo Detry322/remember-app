@@ -1,28 +1,13 @@
 import scipy, numpy, pydub
 from scipy import signal
-import scipy.io.wavfile
 from pydub import AudioSegment
 import math
-from scipy.signal import butter, filtfilt
 
-def butter_lowpass(cutoff, fs, order = 5):
-    nyq = fs/2
-    normal_cutoff=cutoff/nyq
-    b,a = butter(order,normal_cutoff, btype='low',analog = False)
-    return b,a
-
-def butter_lowpass_filtfilt(data, cutoff,fs,order=5):
-    b,a = butter_lowpass(cutoff, fs, order = order)
-    y = filtfilt(b,a,data)
-    return y
 
 def hwindow(audio, audioSize):
-    print 'window'
-
     for j in range(audioSize):
        if audio[j] < 0:
              audio[j] = -audio[j]
-    print 'filtering'
     filtered = abs(signal.hilbert(audio))
     output = filtered
     output2 = []
@@ -40,8 +25,6 @@ def hwindow(audio, audioSize):
 
 
 def diffrect( audio ):
-    print 'diffrect'
-
     n = len(audio)
     output = []
 
@@ -87,8 +70,6 @@ def beat_detection(audioFile):
     for i in range(div):
         beg = int(math.floor(i*lengthShort/div))
         last1 = int(math.floor((i+1)*lengthShort/div))
-        print 'beg' , beg
-        print 'last ', last1
         a = hwindow(audioShort[beg:last1],last1-beg)
         b = diffrect(a)
         windowed = windowed + a
@@ -96,7 +77,7 @@ def beat_detection(audioFile):
 
     for i in range(len(differed)):
         if differed[i] > 0:
-            time = i/(sample_rate/180)
+            time = float(i)/(sample_rate/180.)
             timeDict[time] = differed[i]
     return timeDict
 
