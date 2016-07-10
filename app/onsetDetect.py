@@ -1,89 +1,108 @@
 import scipy, numpy, wave, struct, pydub
+import matplotlib.pyplot as plt
+from scipy import signal
 import scipy.io.wavfile
 from pydub import AudioSegment
+#from pydub.utils import mediainfo
 import math
+from scipy.signal import butter, filtfilt
 
-def filterbanks( audio ):
-    audioSquared = [a*b for a,b in zip(audio,audio)]
-    bandlimits = [32, 64, 128, 256, 512, 1024, 2048, 5096, 10192]
-    maxfreq = 12000
-    n = len(audio)
-    xRMS = 20*math.log10(sum(audioSquared)/(n*.00002))
-    A = 10**((70-xRMS)/20)
-    audio[:] = [x*A for x in audio] #normalize audio
+def butter_lowpass(cutoff, fs, order = 5):
+    nyq = fs/2
+    normal_cutoff=cutoff/nyq
+    b,a = butter(order,normal_cutoff, btype='low',analog = False)
+    return b,a
 
-    dft = numpy.fft.fft(audio)
-    nf = len(dft)
+def butter_lowpass_filtfilt(data, cutoff,fs,order=5):
+    b,a = butter_lowpass(cutoff, fs, order = order)
+    y = filtfilt(b,a,data)
+    return y
 
-    nbands = len(bandlimits)
-    bl = []
-    br = []
+def hwindow(audio, audioSize):
+    print 'window'
+
+    for j in range(audioSize):
+       if audio[j] < 0:
+             audio[j] = -audio[j]
+    print 'filtering'
+    filtered = abs(signal.hilbert(audio))
+    output = filtered
+    output2 = []
+
+    for j in range(len(output)):
+        if j%180 == 0:
+             output2.append(output[j])
+    winLength =  51
+    output2 = numpy.convolve(output2, numpy.ones((winLength,))/winLength)[winLength-1:]
+    output3 = []
+    for i in output2: output3.append(i)
     
-    for i in range(nbands-1):
-        bl.append(math.floor(bandlimits[i]*nf/maxfreq/2)+1)
-        br.append(math.floor(bandlimits[i+1]*nf/maxfreq/2))
+    pad = [0]
+    return pad+output3
 
-    bl.append(math.floor(bandlimits[nbands-1]/maxfreq*n/2)+1)
-    br.append(math.floor(n/2))
 
-    output = [[0]*nf for i in range(nbands)] 
+def diffrect( audio ):
+    print 'diffrect'
 
-    for i in range(nbands):
-        output[i] = numpy.concatenate((dft[bl[i]:br[i]],dft[n+1-br[i]:n+1-bl[i]]))
-    print len(output[1])
+    n = len(audio)
+    output = []
+
+    for j in range(1,n):
+        if audio[j] > 0 and audio[j-1] > 0:
+            d = numpy.log10(audio[j]) - numpy.log10(audio[j-1])
+        else: d = 0
+        if d > 0:
+            output.append(d)
+        else :
+            output.append(0)
+
+    for j in range(len(output) - 30):
+        for k in range(31):
+            if output[j] < output[j+k]:
+                 output[j] = 0
+            elif output[j]> output[j+k]:
+                output[j+k] = 0
+
+        if output[j] < max(output)/5: output[j] = 0
+            
     return output
 
-def hwindow(audio):
-    n = len(audio[0])
-    frequencyBands = [32, 64, 128, 256, 512, 1024, 2048, 5096, 10192]
-    nbands = len(frequencyBands)
-    maxFreq = 12000
-    hannLen = 2*.05*maxFreq
-    hann = []
-    for a in range(int(math.floor(hannLen))):
-        hann.append((math.cos(a*math.pi/hannLen/2))**2)
 
-    wave = [[0]*n for i in range(nbands)] 
+def main(audioFile):
+    sound = AudioSegment.from_file(audioFile)
+    sample_rate = 44100
+    sound2 = sound.split_to_mono()
+    sound2 = sound2[0]
+    audio = sound2.get_array_of_samples()
+    audio = audio.tolist()
+    length = int(round(len(audio)))
+    audioShort = audio[0:int(math.floor(length))]
+    lengthShort = len(audioShort)
+    differed = []
+    windowed = []
+    div = 6
+    a = []
+    b = []
 
-    for i in range(nbands):
-        wave[i] = numpy.fft.ifft(audio[i])
-        wave[i] = wave[i].real
-        print len(wave[i])
+    timeDict = {}
 
-    wave2 = [[] for i in range(nbands)]
-    count = 1
-    freq =[[] for i in range(nbands)]
-    output = [[] for i in range(nbands)]
+    for i in range(div):
+        beg = int(math.floor(i*lengthShort/div))
+        last1 = int(math.floor((i+1)*lengthShort/div))
+        print 'beg' , beg
+        print 'last ', last1
+        a = hwindow(audioShort[beg:last1],last1-beg)
+        b = diffrect(a)
+        windowed = windowed + a
+        differed = differed + b
 
-    for i in range(nbands):
-        for j in range(n):
-            if wave[i][j] < 0:
-                wave[i][j] = -wave[i][j]
-        filtered[i] = numpy.convolve(wave,hann)
+    for i in range(len(differed)):
+        if differed[i] > 0:
+            time = i/(sample_rate/180)
+            timeDict[time] = differed[i]
+    return timeDict
 
-        output[i] = numpy.fft.ifft(filtered[i])
-        output[i] = output[i].real
-    print len(output[1])
-    for i in range(nbands):
-        for j in range(len(output[i])):
-            if j%180 == 0:
-                wave2[i].append(output[i][j])
-    return wave2
-
-def differect( audio ):
-    frequencyBands = [32, 64, 128, 256, 512, 1024, 2048, 5096, 10192]
-    nbands = len(frequencyBands)
-
-sound = AudioSegment.from_file('2baE-draft-002.wav')
-sound2 = sound.split_to_mono()
-sound2 = sound2[0]
-audio = sound2.get_array_of_samples()
-length = int(round(len(audio)/20))
-audio = audio[0:length]
-audio = audio.tolist()
+    
+            
 
 
-filtered = filterbanks(audio)
-windowed = hwindow(filtered)
-print len(filtered)
-print windowed
