@@ -3,6 +3,7 @@ from flask import Flask, request, redirect, url_for, send_from_directory
 from werkzeug.utils import secure_filename
 from moviepy.editor import VideoFileClip, AudioFileClip, concatenate_videoclips
 from pydub import AudioSegment
+from onsetDetect import beat_detection
 
 UPLOAD_FOLDER = 'videos'
 ALLOWED_EXTENSIONS = set(['mp4', 'mov'])
@@ -41,7 +42,7 @@ def allowed_file(filename):
 '''
 Params:
 - song: string of spotify url
-- video_clips: dictionary {'video_name': [{start: 4, end: 6}...]}
+- video_clips: dictionary {'videos/shokugeki.mp4': [{start: 4, end: 6}...]}
 '''
 @app.route('/create', methods=['POST'])
 def create_video():
@@ -55,10 +56,7 @@ def create_video():
 
 		song, _headers = urllib.urlretrieve(spotify_url, song_path)
 
-		# Run beat detection.
-		peaks = run_beat_detection(song_path)
-		# dictionary: {'time': score}
-
+		peaks = run_beat_detection(song_path) # dictionary: {'time': score}
 		video_clips_times = json_data['video_clips']
 
 		stitch_video_clips(video_clips_times, peaks, song)
@@ -67,7 +65,9 @@ def create_video():
 
 
 def run_beat_detection(song_path):
-	song_file = open(song_path, 'r+')
+	peaks = beat_detection(song_path)
+
+	print 'peaks', peaks
 
 	return {'5.05': 6, '10.35': 6, '13.21': 7, '15.23': 10, '22.31': 8}
 

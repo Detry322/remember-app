@@ -1,9 +1,7 @@
-import scipy, numpy, wave, struct, pydub
-import matplotlib.pyplot as plt
+import scipy, numpy, pydub
 from scipy import signal
 import scipy.io.wavfile
 from pydub import AudioSegment
-#from pydub.utils import mediainfo
 import math
 from scipy.signal import butter, filtfilt
 
@@ -68,7 +66,7 @@ def diffrect( audio ):
     return output
 
 
-def main(audioFile):
+def beat_detection(audioFile):
     sound = AudioSegment.from_file(audioFile)
     sample_rate = 44100
     sound2 = sound.split_to_mono()
