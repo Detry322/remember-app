@@ -21,12 +21,10 @@ def app_dir():
 @app.route('/upload', methods=['POST'])
 def upload():
 	if 'file' not in request.files:
-		flash('No file part')
 		return 'No file part', 400
 	print 'REQUEST', request
 	video = request.files['file']
 	if video.filename == '':
-		flash('No selected file')
 		return 'No selected file', 400
 	if video and allowed_file(video.filename):
 		filename = secure_filename(video.filename)

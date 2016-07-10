@@ -66,13 +66,12 @@ $(document).ready(function(){
   });
 
   myDropzone = new Dropzone("div#videoDropzone", {
-    uploadMultiple: true,
     acceptedFiles: "video/mp4,*.mp4",
     url: '/upload',
     previewTemplate: '<div style="display:none"></div>',
     accept: function(file, done) {
       addVideoFile(video, canvas, myDropzone, file);
-      //done();
+      done();
     }
   });
   var playing = false;
@@ -91,6 +90,33 @@ $(document).ready(function(){
       setCanvasSize(canvas_elem);
     }, 10);
   });
+
+
+  window.getVideoRanges = function() {
+    var mapping = video.getAllRanges();
+    var result = {};
+    for (var guid in mapping) {
+      if (mapping.hasOwnProperty(guid)) {
+        var filename = null;
+        $('#uploadedVideos .video-preview').each(function(){
+          if (guid == $(this).data('guid')) {
+            filename = $(this).data('video-url');
+          }
+        });
+        if (!filename) continue;
+        var ranges = mapping[guid];
+        result[filename] = [];
+        for (var i = 0; i < ranges.length; i++) {
+          var range = ranges[i];
+          result[filename].push({
+            start: (range.start < range.end) ? range.start : range.end,
+            end: (range.start < range.end) ? range.end : range.start
+          });
+        }
+      }
+    }
+    return result;
+  };
 });
 
 video_preview_template = Handlebars.compile(document.getElementById('video-preview-template').innerHTML);
@@ -129,21 +155,24 @@ function addVideoFile(video, canvas, dropzone, file) {
   var upload_percent_obj = $(div).find('.uploaded-percent');
   dropzone.on('uploadprogress', function(f, percent) {
     if (f != file) return;
-    upload_percent_obj.text(percent + '%');
+    upload_percent_obj.text((Math.floor(10*percent)/10) + '%');
   });
   dropzone.on('error', function(f) {
     if (f != file) return;
     upload_percent_obj.text('An error occured :(, please try again');
     $(elem).addClass('error');
     setTimeout(function() {
+      video.getAllRanges()[guid] = [];
       $(li).fadeOut();
     }, 3000);
   });
   dropzone.on('complete', function(f) {
     if (f != file) return;
+    console.log(f);
     if (upload_percent_obj.text().indexOf('error') == -1) {
       upload_percent_obj.text('Done!');
       checkVideoCompletion(video);
+      $(elem).data('video-url', f.xhr.response);
     }
   });
 }
@@ -170,7 +199,6 @@ function setCanvasSize(canvas) {
 
 var video_func = (function(video){
   var videoguid_to_ranges = {};
-  var videoguid_to_files = {};
   return {
     scrubToPercent: function(percent) {
       var location = video.duration * percent;
@@ -182,7 +210,6 @@ var video_func = (function(video){
       video.src = src;
       if (!(guid in videoguid_to_ranges)) {
         videoguid_to_ranges[guid] = [];
-        videoguid_to_files[guid] = file;
       }
     },
     pause: function() {
@@ -261,7 +288,7 @@ var video_func = (function(video){
       return result;
     },
     getAllRanges: function() {
-      // TODO
+      return videoguid_to_ranges;
     },
     totalRangeTime: function() {
       var total = 0;
