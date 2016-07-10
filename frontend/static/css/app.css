@@ -202,6 +202,7 @@ span.round-tab:hover {
     font-size: 2em;
     padding-top: 20px;
     background-color: #AFEEEE;
+    cursor: pointer;
 }
 
 #step2 video {
