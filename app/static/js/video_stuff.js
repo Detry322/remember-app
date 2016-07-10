@@ -77,6 +77,7 @@ $(document).ready(function(){
   var playing = false;
   $(document).keydown(function(e) {
     if (e.which != 32) return;
+    if (e.target.tagName.toLowerCase() == 'input') return;
     if (playing) {
       video.pause();
     } else {
@@ -168,7 +169,6 @@ function addVideoFile(video, canvas, dropzone, file) {
   });
   dropzone.on('complete', function(f) {
     if (f != file) return;
-    console.log(f);
     if (upload_percent_obj.text().indexOf('error') == -1) {
       upload_percent_obj.text('Done!');
       checkVideoCompletion(video);

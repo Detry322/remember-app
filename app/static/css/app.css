@@ -286,3 +286,14 @@ span.round-tab:hover {
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
+#processing-spinner-container {
+    text-align: center;
+}
+
+#processing-spinner {
+    margin-left: auto;
+    margin-right: auto;
+    width: 200px;
+    height: 200px;
+}
