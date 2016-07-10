@@ -85,7 +85,7 @@ def run_beat_detection(song_path):
 			distance = min(sorted_peaks[i+1] - sorted_peaks[i], sorted_peaks[i] - sorted_peaks[i-1])
 
 		peaks_with_distance.append((sorted_peaks[i], distance))
-	
+
 
 	sorted_peaks = [x[0] for x in sorted(peaks_with_distance, key=lambda tup: tup[1], reverse=True)]
 
@@ -129,10 +129,12 @@ def stitch_video_clips(video_clips_times, peaks, song_path):
 					break
 				if sorted_peaks[p] > sorted_peaks[j] + video_clip['length']:
 					new_length = sorted_peaks[p - 1] - sorted_peaks[j]
+					print 'new_length2', new_length
 					j = p - 1
 					break
 				elif sorted_peaks[p] == sorted_peaks[j] + video_clip['length']:
 					new_length = sorted_peaks[p] - sorted_peaks[j]
+					print 'new_length3', new_length
 					j = p
 					break
 
@@ -140,7 +142,7 @@ def stitch_video_clips(video_clips_times, peaks, song_path):
 			if (flag):
 				if video_clip['video_name'][:len(prefix)] == prefix:
 					video_clip['video_name'] = video_clip['video_name'][len(prefix):]
-				filename = app.config['UPLOAD_FOLDER'] + '/' + video_clip['video_name']	
+				filename = app.config['UPLOAD_FOLDER'] + '/' + video_clip['video_name']
 
 				v = VideoFileClip(filename, audio=True).subclip(video_clip['start'], video_clip['start'] + new_length)
 				print 'add to video', video_clip['video_name']
@@ -148,11 +150,17 @@ def stitch_video_clips(video_clips_times, peaks, song_path):
 
 	final_video = concatenate_videoclips(video_order, method="compose")
 
+	if not flag:
+		print "clipping short", new_length
+		final_video = final_video.subclip(0, -new_length)
+	else:
+		final_video = final_video.subclip(0, 30)
+
 	filename = str(random.randint(0, 1000000000000)) + '.mp4'
 
 	final_video_path = 'final_videos/' + filename
 
-	final_video.write_videofile(final_video_path, audio=song_path, codec='libx264', fps=30, audio_fps=44100, preset='superfast')
+	final_video.write_videofile(final_video_path, audio=song_path, codec='libx264', fps=30, audio_fps=44100, preset='ultrafast', threads=2)
 
 	return filename
 
