@@ -33,7 +33,7 @@ $(document).ready(function(){
       end: end_percent * video_elem.duration
     };
     var duration = Math.abs(end_percent - start_percent) * video_elem.duration;
-    if (!video.rangeOverlapsRanges(range) && duration > 3 && duration < 7) {
+    if (!video.rangeOverlapsRanges(range) && duration > 2 && duration < 12) {
       video.addRange(start_percent, end_percent);
     }
     canvas.dragging = false;
