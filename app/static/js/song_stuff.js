@@ -71,7 +71,6 @@ function parseSearchAlbumsTracks(tracks) {
 function selectSongHandler(song_elem, li) {
     return function() {
         $('#chosenSong').empty();
-        console.log(song_elem);
         $(song_elem).appendTo('#chosenSong');
         $(li).remove();
         $('#step1btn').attr('disabled', false);

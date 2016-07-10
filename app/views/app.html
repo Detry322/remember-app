@@ -38,6 +38,7 @@
     <script src="/static/vendor/bootstrap/js/bootstrap.min.js"></script>
     <script src="/static/bower_components/handlebars/handlebars.min.js"></script>
     <script src="/static/bower_components/dropzone/dist/dropzone.js"></script>
+    <script src="/static/js/spin.js"></script>
 
     <script id="song-preview-template" type="text/x-handlebars-template">
       <div class="song-preview paused" data-song-url='{{preview_url}}'>
@@ -60,6 +61,7 @@
     <script src="/static/js/app.js" type="text/javascript"></script>
     <script src="/static/js/song_stuff.js" type="text/javascript"></script>
     <script src="/static/js/video_stuff.js" type="text/javascript"></script>
+    <script src="/static/js/submit_stuff.js" type="text/javascript"></script>
 
     <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
@@ -154,7 +156,7 @@
                             <ul class="list-inline pull-right">
                                 <li><button type="button" id="step1btn" class="btn btn-primary next-step" disabled>Save and continue</button></li>
                             </ul>
-                            <p>You chose: <span id="chosenSong">no one yet!</span></p>
+                            <p>You chose: <span id="chosenSong">nothing yet!</span></p>
                             <br />
                             <h4>Search for a song</h4>
                             <p>Type a song name to search. Then, click on any song from the results to play 30 seconds.</p>
@@ -183,7 +185,7 @@
                             </div>
                             <ul class="list-inline pull-right">
                                 <li><button type="button" class="btn btn-default prev-step">Previous</button></li>
-                                <li><button id="step2btn" type="button" class="btn btn-primary next-step" disabled>Save and continue</button></li>
+                                <li><button id="step2btn" type="button" class="btn btn-primary next-step" disabled>Submit for processing</button></li>
                             </ul>
                             <ul>
                                 <h4>Instructions</h4>
@@ -198,13 +200,12 @@
                             <br />
                         </div>
                         <div class="tab-pane" role="tabpanel" id="step3">
-                            <h3>Step 3</h3>
-                            <p>This is step 3</p>
-                            <ul class="list-inline pull-right">
-                                <li><button type="button" class="btn btn-default prev-step">Previous</button></li>
-                                <li><button type="button" class="btn btn-default next-step">Skip</button></li>
-                                <li><button type="button" class="btn btn-primary btn-info-full next-step">Save and continue</button></li>
-                            </ul>
+                            <h3>Processing video...</h3>
+                            <p>Your video is currently processing.</p>
+                            <div id='processing-spinner-container'>
+                                <div id="processing-spinner"></div>
+                            </div>
+                            <div id="processing-output"></div>
                         </div>
                         <div class="tab-pane" role="tabpanel" id="complete">
                             <h3>Complete</h3>
