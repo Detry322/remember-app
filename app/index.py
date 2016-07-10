@@ -44,7 +44,7 @@ def allowed_file(filename):
 '''
 Params:
 - song: string of spotify url
-- video_clips: dictionary {'videos/shokugeki.mp4': [{start: 4, end: 6}...]}
+- video_clips: dictionary {'uploads/shokugeki.mp4': [{start: 4, end: 6}...]}
 '''
 @app.route('/create', methods=['POST'])
 def create_video():
@@ -63,6 +63,8 @@ def create_video():
 
 		final_video_path = stitch_video_clips(video_clips_times, peaks, song)
 
+		print 'final', final_video_path
+
 		return url_for('created_video', filename=final_video_path), 200
 
 @app.route('/created/<filename>')
@@ -72,48 +74,68 @@ def created_video(filename):
 
 def run_beat_detection(song_path):
 	peaks = beat_detection(song_path)
-
 	sorted_peaks = sorted(peaks)
-	print 'sorted_peaks', sorted_peaks[:5]
 
-	return {'5.05': 6, '10.35': 6, '13.21': 7, '15.23': 10, '22.31': 8}
+	peaks_with_distance = []
+	for i in xrange(len(sorted_peaks)):
+		distance = 0
+		if i == 0:
+			distance = sorted_peaks[i+1] - sorted_peaks[i]
+		elif (i == len(sorted_peaks) - 1):
+			distance = sorted_peaks[i] - sorted_peaks[i-1]
+		else:
+			distance = min(sorted_peaks[i+1] - sorted_peaks[i], sorted_peaks[i] - sorted_peaks[i-1])
+
+		peaks_with_distance.append((sorted_peaks[i], distance))
+	
+
+	sorted_peaks = [x[0] for x in sorted(peaks_with_distance, key=lambda tup: tup[1], reverse=True)]
+
+	return sorted_peaks
 
 
 def stitch_video_clips(video_clips_times, peaks, song_path):
 
 	audio = AudioFileClip(song_path)
 
+	sorted_peaks = sorted(peaks)
+
 	# Get lengths of video clips and audio clips
-	video_clips_times_and_lengths, audio_clip_lengths = format_videos_and_audio(video_clips_times, peaks)
+	video_clips_times_and_lengths, audio_clip_lengths = format_videos_and_audio(video_clips_times, sorted_peaks)
 
-	# Sort the video clip and peak difference lengths in decreasing order
-	sorted_videos = sorted(video_clips_times_and_lengths, key=lambda k: k['length'], reverse=True)
-	sorted_audio = sorted(audio_clip_lengths, key=lambda k: k['length'], reverse=True)
+	used_video_clips = set()
+	video_order = []
+	j = 0
 
-	# Try to fit the largest video clip in the audio clip possible.
-	# We look from biggest audio sections to smallest.
-	mapping = {}
-	used_videos = []
+	print 'peaks', sorted_peaks
 
-	for a in sorted_audio:
-		for v in sorted_videos:
-			if v['length'] >= a['length'] and v['id'] not in used_videos:
-				# Video clip fits in this audio section!
-				mapping[a['id']] = v['id']
-				used_videos.append(v['id'])
-				break
+	while(len(used_video_clips) < len(video_clips_times_and_lengths)):
+		# Pick random video that we haven't used.
+		i = random.randint(0, len(video_clips_times_and_lengths) - 1)
 
-	# Clip out the videos for each video id
-	clips = create_video_clips(sorted_videos)
+		if i not in used_video_clips:
+			used_video_clips.add(i)
+			video_clip = video_clips_times_and_lengths[i]
 
-	video_clips_order = []
-	for a in xrange(len(sorted_audio)):
-		video_id = mapping[a]
-		for c in clips:
-			if c['id'] == video_id:
-				video_clips_order.append(c['video'])
+			print 'start ', sorted_peaks[j]
 
-	final_video = concatenate_videoclips(video_clips_order)
+			# Check for peak that is at end or right before
+			for p in range(j, len(sorted_peaks)):
+				print 'p', sorted_peaks[p]
+				if sorted_peaks[p] > sorted_peaks[j] + video_clip['length']:
+					j = p - 1
+					break
+				elif sorted_peaks[p] == sorted_peaks[j] + video_clip['length']:
+					j = p
+					break
+
+			print 'ending', sorted_peaks[j]
+			# Truncate and create the video clip and add it to the order.
+			filename = app.config['UPLOAD_FOLDER'] + '/' + video_clip['video_name'].lstrip('/uploads')
+			v = VideoFileClip(filename, audio=True).subclip(video_clip['start'], sorted_peaks[j])
+			video_order.append(v)
+
+	final_video = concatenate_videoclips(video_order)
 
 	filename = str(random.randint(0, 1000000000000)) + '.mp4'
 
@@ -121,19 +143,7 @@ def stitch_video_clips(video_clips_times, peaks, song_path):
 
 	final_video.write_videofile(final_video_path, audio=song_path)
 
-
 	return filename
-
-def create_video_clips(video_clips_times):
-	clips = []
-	for v in video_clips_times:
-		filename = app.config['UPLOAD_FOLDER'] + '/' + v['video_name'].lstrip('/uploads')
-		video = VideoFileClip(filename, audio=True)
-		clips.append({
-			'id': v['id'],
-			'video': video.subclip(v['start'], v['end'])
-		})
-	return clips
 
 
 def format_videos_and_audio(video_clips_times, peaks):
@@ -145,14 +155,14 @@ def format_videos_and_audio(video_clips_times, peaks):
 			start = float(video_clips_times[v][i]['start'])
 
 			video_clips_times_and_lengths.append({
-				'id': i,
+				'id': v + str(i),
 				'video_name': v,
 				'start': start,
 				'end': end,
 				'length': end - start
 			})
 
-	times = ['0.00'] + peaks.keys() + ['30.00']
+	times = ['0.00'] + peaks + ['30.00']
 	times = sorted([float(x) for x in times])
 	audio_clip_lengths = []
 	for t in xrange(len(times)):
