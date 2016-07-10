@@ -1,4 +1,4 @@
-import os, urllib
+import os, urllib, operator, random
 from flask import Flask, request, redirect, url_for, send_from_directory
 from werkzeug.utils import secure_filename
 from moviepy.editor import VideoFileClip, AudioFileClip, concatenate_videoclips
@@ -6,6 +6,7 @@ from pydub import AudioSegment
 from onsetDetect import beat_detection
 
 UPLOAD_FOLDER = 'videos'
+CREATED_FOLDER = 'final_videos'
 ALLOWED_EXTENSIONS = set(['mp4', 'mov'])
 
 app = Flask(__name__, static_url_path='/static')
@@ -59,15 +60,20 @@ def create_video():
 		peaks = run_beat_detection(song_path) # dictionary: {'time': score}
 		video_clips_times = json_data['video_clips']
 
-		stitch_video_clips(video_clips_times, peaks, song)
+		final_video_path = stitch_video_clips(video_clips_times, peaks, song)
 
-		return song
+		return url_for('created_video', filename=final_video_path), 200
+
+@app.route('/created/<filename>')
+def created_video(filename):
+	return send_from_directory(app.config['CREATED_FOLDER'], filename)
 
 
 def run_beat_detection(song_path):
 	peaks = beat_detection(song_path)
 
-	print 'peaks', peaks
+	sorted_peaks = sorted(peaks.items(), key=operator.itemgetter(1))
+	print 'sorted_peaks', sorted_peaks[:5]
 
 	return {'5.05': 6, '10.35': 6, '13.21': 7, '15.23': 10, '22.31': 8}
 
@@ -77,7 +83,6 @@ def stitch_video_clips(video_clips_times, peaks, song_path):
 	audio = AudioFileClip(song_path)
 
 	# Get lengths of video clips and audio clips
-
 	video_clips_times_and_lengths, audio_clip_lengths = format_videos_and_audio(video_clips_times, peaks)
 
 	# Sort the video clip and peak difference lengths in decreasing order
@@ -113,14 +118,17 @@ def stitch_video_clips(video_clips_times, peaks, song_path):
 	# concatenate in that order
 	# replace the audio on top of it with the original audio
 
-	final_video.write_videofile("shokugeki.mp4", audio=song_path)
+	final_video_path = 'final_videos/' + str(random.randint(0, 1000)) + '.mp4'
 
-	return {}
+	final_video.write_videofile(final_video_path, audio=song_path)
+
+
+	return final_video_path
 
 def create_video_clips(video_clips_times):
 	clips = []
 	for v in video_clips_times:
-		video = VideoFileClip('videos/' + v['video_name'], audio=True)
+		video = VideoFileClip(v['video_name'], audio=True)
 		clips.append({
 			'id': v['id'],
 			'video': video.subclip(v['start'], v['end'])
