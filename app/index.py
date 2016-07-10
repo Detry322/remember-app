@@ -1,5 +1,5 @@
 import os, urllib, operator, random
-from flask import Flask, request, redirect, url_for, send_from_directory
+from flask import Flask, request, redirect, url_for, send_from_directory, safe_join
 from werkzeug.utils import secure_filename
 from moviepy.editor import VideoFileClip, AudioFileClip, concatenate_videoclips
 from pydub import AudioSegment
@@ -36,7 +36,7 @@ def upload():
 
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
-	return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+	return send_file_partial(safe_join(app.config['UPLOAD_FOLDER'], filename))
 
 def allowed_file(filename):
 	return '.' in filename and filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
@@ -67,7 +67,7 @@ def create_video():
 
 @app.route('/created/<filename>')
 def created_video(filename):
-	return send_from_directory(app.config['CREATED_FOLDER'], filename)
+	return send_file_partial(safe_join(app.config['CREATED_FOLDER'], filename))
 
 
 def run_beat_detection(song_path):
@@ -165,6 +165,54 @@ def format_videos_and_audio(video_clips_times, peaks):
 			})
 
 	return video_clips_times_and_lengths, audio_clip_lengths
+
+import mimetypes
+import os
+import re
+
+from flask import request, send_file, Response
+
+@app.after_request
+def after_request(response):
+    response.headers.add('Accept-Ranges', 'bytes')
+    return response
+
+
+def send_file_partial(path):
+    """
+        Simple wrapper around send_file which handles HTTP 206 Partial Content
+        (byte ranges)
+        TODO: handle all send_file args, mirror send_file's error handling
+        (if it has any)
+    """
+    range_header = request.headers.get('Range', None)
+    if not range_header: return send_file(path)
+
+    size = os.path.getsize(path)
+    byte1, byte2 = 0, None
+
+    m = re.search('(\d+)-(\d*)', range_header)
+    g = m.groups()
+
+    if g[0]: byte1 = int(g[0])
+    if g[1]: byte2 = int(g[1])
+
+    length = size - byte1
+    if byte2 is not None:
+        length = byte2 - byte1
+
+    data = None
+    with open(path, 'rb') as f:
+        f.seek(byte1)
+        data = f.read(length)
+
+    rv = Response(data,
+        206,
+        mimetype=mimetypes.guess_type(path)[0],
+        direct_passthrough=True)
+    rv.headers.add('Content-Range', 'bytes {0}-{1}/{2}'.format(byte1, byte1 + length - 1, size))
+
+    return rv
 
 if (__name__ == '__main__'):
 	app.run(debug=True, threaded=True)
