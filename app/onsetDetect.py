@@ -64,8 +64,8 @@ def beat_detection(audioFile):
     div = 6
     a = []
     b = []
-
-    timeDict = {}
+    timeArray = []
+    
 
     for i in range(div):
         beg = int(math.floor(i*lengthShort/div))
@@ -74,12 +74,15 @@ def beat_detection(audioFile):
         b = diffrect(a)
         windowed = windowed + a
         differed = differed + b
-
+    maxDiff = max(differed)
+    count = 0
+    
     for i in range(len(differed)):
-        if differed[i] > 0:
+        if differed[i] >= maxDiff/2 and count < 50:
             time = float(i)/(sample_rate/180.)
-            timeDict[time] = differed[i]
-    return timeDict
+            timeArray.append(time)
+            count = count+1
+    return timeArray
 
     
             
