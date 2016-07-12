@@ -6,7 +6,10 @@
 
 iMovie in the cloud, this flask app helps automate the process of creating digestable video clips from your life experiences.
 
-To run
+Created for greylock hackfest 2016.
+
+Running
+-------
 
 ```
 cd app
